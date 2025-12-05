@@ -21,11 +21,22 @@ const Billing = ({ clearCart }) => {
     try {
       setLoading(true);
       const response = await orderAPI.getQR(orderId);
+      console.log('Order Response:', response.data); // Debug log
       setOrder(response.data.order);
-      setQrData(response.data.qrCode);
+      
+      // Always generate UPI link on frontend - don't use backend QR image
+      // This ensures QR code always contains UPI link, not JSON
+      if (response.data.order) {
+        const upiId = '7397508715@ptyes';
+        const upiName = 'Restaurant Billing System';
+        const order = response.data.order;
+        const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(upiName)}&am=${order.total.toFixed(2)}&cu=INR&tn=Order${order._id.toString().substring(0, 8)}`;
+        console.log('✅ Frontend UPI Link Generated:', upiLink);
+        setQrData(upiLink); // This will be used to generate QR code
+      }
     } catch (error) {
-      console.error('Error fetching order:', error);
-      alert('Failed to load order details');
+      console.error('❌ Error fetching order:', error);
+      alert('Failed to load order details: ' + (error.response?.data?.error || error.message));
     } finally {
       setLoading(false);
     }
@@ -149,23 +160,29 @@ const Billing = ({ clearCart }) => {
         </div>
 
         <div className="qr-section">
-          <h3>Scan to Pay</h3>
+          <h3>Scan to Pay via UPI</h3>
           <div className="qr-code-container">
-            {qrData ? (
-              <img src={qrData} alt="QR Code" className="qr-code" />
-            ) : (
+            {order && (
               <QRCodeSVG
-                value={JSON.stringify({
-                  orderId: order._id,
-                  total: order.total,
-                  date: order.orderDate
-                })}
+                value={qrData || `upi://pay?pa=7397508715@ptyes&pn=${encodeURIComponent('Restaurant Billing System')}&am=${order.total.toFixed(2)}&cu=INR&tn=Order${order._id.toString().substring(0, 8)}`}
                 size={200}
                 className="qr-code"
+                level="M"
               />
             )}
           </div>
-          <p className="qr-note">Scan this QR code to complete payment</p>
+          <p className="qr-note">Scan this QR code with any UPI app (PhonePe, Google Pay, Paytm) to complete payment</p>
+          {order && (
+            <div style={{ fontSize: '0.85rem', color: '#7f8c8d', marginTop: '0.5rem', textAlign: 'center' }}>
+              <p>Amount: ₹{order.total.toFixed(2)}</p>
+              <p>UPI ID: 7397508715@ptyes</p>
+              {qrData && (
+                <p style={{ fontSize: '0.75rem', wordBreak: 'break-all', marginTop: '0.5rem' }}>
+                  Link: {qrData.substring(0, 50)}...
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="bill-footer">
