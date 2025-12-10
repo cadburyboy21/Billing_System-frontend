@@ -53,7 +53,7 @@ function App() {
       <div className="App">
         <nav className="navbar">
           <div className="container">
-            <Link to="/" className="logo">🍽️ Restaurant Billing System</Link>
+            <Link to="/" className="logo">🍽️ Restaurant Billing</Link>
             <div className="nav-links">
               <Link to="/">Menu</Link>
               <Link to="/menu-management">Manage Menu</Link>
